@@ -1,0 +1,36 @@
+Superuser
+username - admin
+password - admin
+
+Manager
+username - user1
+password - lemon@01
+
+username - user2
+password - lemon@02
+
+Delivery Crew
+username - user3
+password - lemon@03
+
+username - user4
+password - lemon@04
+
+username - user5
+password - lemon@05
+
+Customer
+username - user6
+password - lemon@06
+
+username - user7
+password - lemon@07
+
+username - user8
+password - lemon@08
+
+username - user9
+password - lemon@09
+
+username - user10
+password - lemon@10

@@ -21,7 +21,7 @@ class Cart(models.Model):
     price = models.DecimalField(max_digits=6, decimal_places=2)
 
     class Meta:
-        unique_togethor = ('menuitem', 'user')
+        unique_together = ('menuitem', 'user')
 
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -38,4 +38,4 @@ class OrderItem(models.Model):
     price = models.DecimalField(max_digits=6, decimal_places=2)
 
     class Meta:
-        unique_togethor = ('order', 'menuitem')
+        unique_together = ['order', 'menuitem']
