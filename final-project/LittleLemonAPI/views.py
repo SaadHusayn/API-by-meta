@@ -1,9 +1,9 @@
 from decimal import Decimal
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status
-from .models import MenuItem, Cart
-from .permissions import IsManager
-from .serializers import CartSerializer, MenuItemSerializer, UserSerializer
+from .models import MenuItem, Cart, Order, OrderItem
+from .permissions import IsManager, IsDeliveryCrew
+from .serializers import CartSerializer, MenuItemSerializer, UserSerializer, OrderSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth.models import User, Group
@@ -87,3 +87,51 @@ class CartView(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         Cart.objects.filter(user=request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class OrderView(viewsets.ModelViewSet):
+    serializer_class = OrderSerializer
+    
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'create']:
+            return [IsAuthenticated()] 
+        elif self.action in ['destroy', 'update']:
+            return [IsAuthenticated(), IsManager()]
+        elif self.action in ['partial_update']:
+            return [IsAuthenticated(), IsManager() | IsDeliveryCrew()]
+        
+
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='Manager').exists():
+            return Order.objects.all()
+        elif self.request.user.groups.filter(name='Delivery Crew').exists():
+            return Order.objects.filter(delivery_crew=self.request.user)
+        else:
+            return Order.objects.filter(user=self.request.user)
+        
+    def create(self, request, *args, **kwargs):
+        cart_items = Cart.objects.filter(user=request.user)
+        if cart_items:
+            total = 0 
+            for item in cart_items:
+                total += item.price
+            order = Order.objects.create(user=request.user, total=total)
+
+            for item in cart_items:
+                orderitem = OrderItem.objects.create(order=order, menuitem=item.menuitem, quantity=item.quantity, unit_price=item.unit_price, price=item.price)
+                orderitem.save()
+            
+            cart_items.delete()
+
+            return Response({"message":f"order has been placed successfully with order id {order.id}"}, status=status.HTTP_201_CREATED)
+        
+        return Response({"message":"error, no items in cart"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def partial_update(self, request, *args, **kwargs):
+        if request.user.groups.filter(name="Delivery Crew").exists():
+            if set(request.data.keys()) != {'status'}:
+                return Response({"message":"error, delivery crew can only update order status"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return super().partial_update(request, *args, **kwargs)
+    
+   

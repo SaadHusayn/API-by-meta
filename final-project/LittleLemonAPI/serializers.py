@@ -25,16 +25,31 @@ class CartSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(write_only=True)
     menuitem = MenuItemSerializer(read_only=True)
     menuitem_id = serializers.IntegerField(write_only=True)
-    # unit_price = serializers.SerializerMethodField(method_name = 'get_unit_price')
-    # price = serializers.SerializerMethodField(method_name = 'calculate_price')
     class Meta:
         model = Cart
         fields = ['id', 'user', 'user_id', 'menuitem', 'menuitem_id', 'quantity', 'unit_price', 'price']
 
-    def get_unit_price(self, product:Cart):
-        return product.menuitem.price
+# user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     delivery_crew = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='delivery_crew', null=True)
+#     status = models.BooleanField(db_index=True, default=0)
+#     total = models.DecimalField(max_digits=6, decimal_places=2)
+#     date = models.DateField(db_index=True)    
 
-    def calculate_price(self, product:Cart):
-        return product.unit_price * product.quantity
-    
-    
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    order_id = serializers.IntegerField()
+    menuitem = MenuItemSerializer(read_only=True)
+    menuitem_id = serializers.IntegerField(write_only=True)
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'order_id', 'menuitem', 'menuitem_id', 'quantity', 'unit_price', 'price']
+
+class OrderSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    user_id = serializers.IntegerField(write_only=True)
+    delivery_crew = UserSerializer(read_only=True)
+    delivery_crew_id = serializers.IntegerField(write_only=True)
+    items = OrderItemSerializer(many=True)
+    class Meta:
+        model = Order
+        fields = ['id', 'user', 'user_id', 'delivery_crew', 'delivery_crew_id', 'status', 'total', 'date', 'items']
