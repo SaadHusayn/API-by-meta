@@ -8,6 +8,7 @@ urlpatterns = [
     path("groups/manager/users/<int:pk>", views.ManagerGroupView.as_view({'delete':'destroy'})),
     path("groups/delivery-crew/users", views.DeliveryCrewGroupView.as_view({'get':'list','post':'create'})),
     path("groups/delivery-crew/users/<int:pk>", views.DeliveryCrewGroupView.as_view({'delete':'destroy'})),
+    path("cart/menu-items", views.CartView.as_view({'get':'list', 'post':'create', 'delete':'destroy'})),
     path("", include('djoser.urls')),
     
 ]
