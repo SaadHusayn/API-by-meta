@@ -1,28 +1,45 @@
 from decimal import Decimal
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status
-from .models import MenuItem, Cart, Order, OrderItem
+from .models import MenuItem, Cart, Order, OrderItem, Category
 from .permissions import IsManager, IsDeliveryCrew
-from .serializers import CartSerializer, MenuItemSerializer, UserSerializer, OrderSerializer
-from rest_framework.permissions import IsAuthenticated
+from .serializers import CartSerializer, MenuItemSerializer, UserSerializer, OrderSerializer, CategorySerializer
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from django.contrib.auth.models import User, Group
 
 # Create your views here.
-class MenuItemView(viewsets.ModelViewSet):
-    queryset = MenuItem.objects.select_related('category').all()
-    serializer_class = MenuItemSerializer
+
+class CategoryView(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
     
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
-            return [IsAuthenticated()]
+            permission_classes =  [IsAuthenticated]
         else:
-            return [IsAuthenticated(), IsManager()]
+            permission_classes = [IsAuthenticated, IsManager | IsAdminUser]
+        
+        return[permission() for permission in permission_classes]
+
+class MenuItemView(viewsets.ModelViewSet):
+    queryset = MenuItem.objects.select_related('category').all()
+    serializer_class = MenuItemSerializer
+    ordering_fields=['price',]
+    search_fields=['title','category__title']
+    
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            permission_classes =  [IsAuthenticated]
+        else:
+            permission_classes = [IsAuthenticated, IsManager | IsAdminUser]
+        
+        return[permission() for permission in permission_classes] 
 
 class ManagerGroupView(viewsets.ModelViewSet):
     queryset = User.objects.filter(groups__name='Manager')
     serializer_class = UserSerializer
-    permission_classes = [IsManager]
+    permission_classes = [IsManager | IsAdminUser]
 
     def create(self, request, *args, **kwargs):
         username = request.data['username']
@@ -94,11 +111,13 @@ class OrderView(viewsets.ModelViewSet):
     
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'create']:
-            return [IsAuthenticated()] 
+            permission_classes =  [IsAuthenticated] 
         elif self.action in ['destroy', 'update']:
-            return [IsAuthenticated(), IsManager()]
+            permission_classes =  [IsAuthenticated, IsManager]
         elif self.action in ['partial_update']:
-            return [IsAuthenticated(), IsManager() | IsDeliveryCrew()]
+            permission_classes =  [IsAuthenticated, IsManager | IsDeliveryCrew]
+        
+        return[permission() for permission in permission_classes] 
         
 
     def get_queryset(self):

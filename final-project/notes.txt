@@ -34,3 +34,11 @@ password - lemon@09
 
 username - user10
 password - lemon@10
+
+
+
+user6 has placed order with status 1(delivered)
+
+items in cart can be placed by customers by a menuitem_id and quantity
+
+order can be assign to a delivery crew using delivery_crew_id in patch request by manager
